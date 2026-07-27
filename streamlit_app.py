@@ -8,14 +8,17 @@ st.set_page_config(page_title="Chrome Market Post Generator", page_icon="⛏️"
 st.title("⛏️ Chrome & Ferrochrome Market Intelligence")
 st.write("Generate daily executive-ready LinkedIn posts from real-time commodity mining updates.")
 
-# 1. API Key Setup (Pulling safely from Streamlit Secrets or Input)
-# Safely check for secrets without crashing locally
+# 1. API Key Setup (Pulling safely from Streamlit Secrets or Manual Input)
+GEMINI_API_KEY = ""
+
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
-    # Your hardcoded backup key for local testing
-    GEMINI_API_KEY = "AQ.Ab8RN6IXXC2-0rucXb2FwQOp0Mfmm8yg3-40BZzZ4C2pt2_6Bw"
+    pass
 
+# Fallback input field if secrets are not set
+if not GEMINI_API_KEY:
+    GEMINI_API_KEY = st.sidebar.text_input("Enter Gemini API Key", type="password")
 # Fallback if secret isn't configured yet
 if not GEMINI_API_KEY:
     GEMINI_API_KEY = st.sidebar.text_input("Enter Gemini API Key", type="password")

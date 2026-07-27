@@ -5,7 +5,7 @@ from google import genai
 # ==========================================
 # 1. SETUP YOUR GEMINI API KEY
 # ==========================================
-GEMINI_API_KEY = "AQ.Ab8RN6IXXC2-0rucXb2FwQOp0Mfmm8yg3-40BZzZ4C2pt2_6Bw"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
