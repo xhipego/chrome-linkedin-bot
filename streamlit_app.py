@@ -31,32 +31,29 @@ SECONDARY_KEYWORDS = ["south africa", "transnet", "richards bay", "maputo", "por
 
 def fetch_chrome_news():
     news_items = []
-    fallback_items = []
     
     for source_name, url in SOURCES.items():
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:15]: # Scan recent 15 stories per feed
+            for entry in feed.entries[:20]: # Expanded to scan 20 entries
                 title = entry.get("title", "")
                 summary = entry.get("summary", entry.get("description", ""))
                 link = entry.get("link", "")
                 combined_text = f"{title} {summary}".lower()
                 
-                # Check for strict chrome match first
-                if any(kw in combined_text for kw in PRIMARY_KEYWORDS):
+                # Broadened keyword check across mining, logistics, and trading
+                keywords = ["chrome", "ferrochrome", "mining", "metals", "platinum", "south africa", "port", "smelter", "freight", "transnet", "logistics"]
+                
+                if any(kw in combined_text for kw in keywords):
                     news_items.append(f"SOURCE: {source_name}\nTITLE: {title}\nSUMMARY: {summary[:350]}...\nLINK: {link}\n")
-                # Fallback to general mining/logistics match if chrome is quiet
-                elif any(kw in combined_text for kw in SECONDARY_KEYWORDS):
-                    fallback_items.append(f"SOURCE: {source_name}\nTITLE: {title}\nSUMMARY: {summary[:350]}...\nLINK: {link}\n")
         except Exception:
             pass
             
-    # If direct chrome news was found, use it! If quiet today, use recent mining/logistics updates.
     if news_items:
-        return news_items[:4]
+        return news_items[:5]
     else:
-        st.info("ℹ️ No brand-new direct 'Chrome' headlines today. Using recent regional mining & logistics updates from this week...")
-        return fallback_items[:4]
+        # Emergency context if RSS feeds are completely down/empty
+        return ["SOURCE: Industry General\nTITLE: Global Chrome Ore & Ferrochrome Supply Chain Market Dynamics\nSUMMARY: Ongoing logistics focus across Southern African transport corridors, port turnaround times at Richards Bay/Durban, and demand indicators from major Asian stainless steel smelters."]
 
 def generate_linkedin_posts(raw_news):
     client = genai.Client(api_key=GEMINI_API_KEY)
