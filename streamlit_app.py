@@ -23,6 +23,8 @@ SOURCES = {
     "Mining Weekly (Latest)": "https://www.miningweekly.com/page/rss-feed/feed:latest-news",
     "Mining.com Feed": "https://www.mining.com/feed/",
     "Mining Weekly (Ferrous/Chrome)": "https://www.miningweekly.com/page/ferrous-metals/rss",
+    "Engineering News (Freight & Logistics)": "https://www.engineeringnews.co.za/page/rss-feed/feed:latest-news",
+    "Miningmx (African Mining & PGMs)": "https://www.miningmx.com/feed/",
 }
 
 # Keywords to match
