@@ -3,74 +3,81 @@ import feedparser
 from google import genai
 
 # Page Configuration
-st.set_page_config(page_title="Chrome Market Post Generator", page_icon="⛏️", layout="wide")
+st.set_page_config(page_title="Chrome Market Intelligence", page_icon="⛏️", layout="wide")
 
 st.title("⛏️ Chrome & Ferrochrome Market Intelligence")
 st.write("Generate daily executive-ready LinkedIn posts from real-time commodity mining updates.")
 
-# 1. API Key Setup (Pulling safely from Streamlit Secrets or Manual Input)
+# 1. API Key Setup
 GEMINI_API_KEY = ""
-
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
     pass
 
-# Fallback input field if secrets are not set
-if not GEMINI_API_KEY:
-    GEMINI_API_KEY = st.sidebar.text_input("Enter Gemini API Key", type="password")
-# Fallback if secret isn't configured yet
 if not GEMINI_API_KEY:
     GEMINI_API_KEY = st.sidebar.text_input("Enter Gemini API Key", type="password")
 
-# 2. News Sources
+# 2. Expanded Mining & Commodity Feeds
 SOURCES = {
-    "Mining Weekly (Latest News)": "https://www.miningweekly.com/page/rss-feed/feed:latest-news",
+    "Mining Weekly (Latest)": "https://www.miningweekly.com/page/rss-feed/feed:latest-news",
     "Mining.com Feed": "https://www.mining.com/feed/",
-    "Commodity Africa News": "https://www.miningweekly.com/page/ferrous-metals/rss",
+    "Mining Weekly (Ferrous/Chrome)": "https://www.miningweekly.com/page/ferrous-metals/rss",
 }
+
+# Keywords to match
+PRIMARY_KEYWORDS = ["chrome", "ferrochrome", "chromium", "ug2", "lumpy ore", "smelter"]
+SECONDARY_KEYWORDS = ["south africa", "transnet", "richards bay", "maputo", "port", "ferrous", "mining", "metals", "platinum"]
 
 def fetch_chrome_news():
     news_items = []
+    fallback_items = []
+    
     for source_name, url in SOURCES.items():
         try:
             feed = feedparser.parse(url)
-            count = 0
-            for entry in feed.entries:
+            for entry in feed.entries[:15]: # Scan recent 15 stories per feed
                 title = entry.get("title", "")
                 summary = entry.get("summary", entry.get("description", ""))
                 link = entry.get("link", "")
-                
                 combined_text = f"{title} {summary}".lower()
-                if any(kw in combined_text for kw in ["chrome", "ferrochrome", "mining", "metals", "platinum", "south africa", "port", "smelter"]):
-                    news_items.append(f"SOURCE: {source_name}\nTITLE: {title}\nSUMMARY: {summary[:300]}...\nLINK: {link}\n")
-                    count += 1
-                    if count >= 2:
-                        break
+                
+                # Check for strict chrome match first
+                if any(kw in combined_text for kw in PRIMARY_KEYWORDS):
+                    news_items.append(f"SOURCE: {source_name}\nTITLE: {title}\nSUMMARY: {summary[:350]}...\nLINK: {link}\n")
+                # Fallback to general mining/logistics match if chrome is quiet
+                elif any(kw in combined_text for kw in SECONDARY_KEYWORDS):
+                    fallback_items.append(f"SOURCE: {source_name}\nTITLE: {title}\nSUMMARY: {summary[:350]}...\nLINK: {link}\n")
         except Exception:
             pass
-    return news_items
+            
+    # If direct chrome news was found, use it! If quiet today, use recent mining/logistics updates.
+    if news_items:
+        return news_items[:4]
+    else:
+        st.info("ℹ️ No brand-new direct 'Chrome' headlines today. Using recent regional mining & logistics updates from this week...")
+        return fallback_items[:4]
 
 def generate_linkedin_posts(raw_news):
     client = genai.Client(api_key=GEMINI_API_KEY)
     combined_context = "\n-------------------\n".join(raw_news)
     
     prompt = f"""
-    You are an expert Commodity Trader specializing in Chrome Ore and Ferrochrome. 
-    Analyze these raw news updates gathered today:
+    You are an expert Commodity Trader specializing in Chrome Ore and Ferrochrome trading. 
+    Analyze these raw mining and logistics updates gathered from the market:
 
     {combined_context}
 
     Your task is to write 2 distinct, highly professional LinkedIn post drafts aimed at attracting commodity buyers, ferrochrome smelters, and trade partners.
 
     Draft 1: "Market Insight & Trade Commentary"
-    - Focus on supply trends, price shifts, port logistics, or regional mining news.
-    - Provide 3 bullet points breaking down key facts.
+    - Relate the provided news to chrome/ferrochrome supply dynamics, logistics corridors (South Africa/Mozambique), or pricing trends.
+    - Provide 3 crisp bullet points breaking down key market implications.
     - End with trader commentary on what this means for chrome ore buyers/sellers.
 
-    Draft 2: "Commodity Spotlight / Grade Analysis"
-    - Highlight key specifications (e.g., 40-42% Cr concentrate, lumpy ore, South Africa/Zimbabwe exports, Chinese port inventory).
-    - Explain why this dynamic matters right now in the supply chain.
+    Draft 2: "Commodity Spotlight / Strategy Analysis"
+    - Highlight key trade specs (e.g., 40-42% Cr concentrate, lumpy ore, South Africa/Zimbabwe exports, Chinese port inventory).
+    - Explain why this market dynamic matters right now in the supply chain.
 
     Formatting Rules:
     - Keep tone executive, clear, and direct.
@@ -96,7 +103,7 @@ if st.button("🚀 Generate Today's LinkedIn Posts", type="primary"):
     if not GEMINI_API_KEY:
         st.error("Please provide a valid Gemini API Key to proceed.")
     else:
-        with st.spinner("Fetching latest news & generating trade insights..."):
+        with st.spinner("Scanning market intelligence & generating insights..."):
             news = fetch_chrome_news()
             if news:
                 drafts = generate_linkedin_posts(news)
@@ -105,6 +112,6 @@ if st.button("🚀 Generate Today's LinkedIn Posts", type="primary"):
                     st.markdown("### 📋 Copy Your Post Below:")
                     st.code(drafts, language="markdown")
                 else:
-                    st.error("Could not generate drafts. Please check your API quota or key.")
+                    st.error("Could not generate drafts. Please check your API key.")
             else:
-                st.warning("No new chrome/mining stories found today.")
+                st.warning("No articles found.")
