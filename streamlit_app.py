@@ -109,7 +109,7 @@ if st.button("🚀 Generate Today's LinkedIn Posts", type="primary"):
                 if drafts:
                     st.success("Drafts Generated Successfully!")
                     st.markdown("### 📋 Copy Your Post Below:")
-                    st.code(drafts, language="markdown")
+                    st.markdown(drafts)
                 else:
                     st.error("Could not generate drafts. Please check your API key.")
             else:
